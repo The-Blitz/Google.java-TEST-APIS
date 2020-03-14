@@ -25,6 +25,8 @@ hs_err_pid*
 #ignore IntelliJ
 .idea
 /build/
+/classroom-tokens/
+/gsuite-tokens/
 
 #ignore Gradle
 .gradle
