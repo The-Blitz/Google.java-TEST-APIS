@@ -17,10 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.lang.reflect.Method;
 
 public class ClassroomJavaAPI {
@@ -89,6 +86,14 @@ public class ClassroomJavaAPI {
         return servicio.courses().get(id).execute();
     }
 
+    //Dar el nombre exacto de la clase
+    private static Course obtenerClaseporNombre(Classroom servicio , String nombre) throws IOException {
+        List<Course> clases = listarClases(servicio, totaldeClases(servicio));
+        for (Course clase : clases) {
+            if(Objects.equals(nombre ,clase.getName() ) ) return clase;
+        }
+        return null;
+    }
     private static void archivarClase(Classroom servicio, String idClase ) throws IOException {
         Course clase = obtenerClaseporId(servicio, idClase);
         clase.setCourseState("ARCHIVED");
@@ -108,7 +113,7 @@ public class ClassroomJavaAPI {
         topico.set("name", nombreTopico);
 
         topico = servicio.courses().topics().create(idClase,topico).execute();
-        System.out.println(java.text.MessageFormat.format( "Se Creo el topico con id {0} para el curso con id {1}" , topico.getTopicId(), idClase ));
+        System.out.println(java.text.MessageFormat.format( "Se Creo el topico con id {0} para la clase con id {1}" , topico.getTopicId(), idClase ));
         return topico;
     }
 
@@ -118,9 +123,23 @@ public class ClassroomJavaAPI {
         return topicos.size();
     }
 
+    private static List<Topic> obtenerTopicosdeClase(Classroom servicio, String idClase , Integer cantidadClases ) throws IOException {
+        ListTopicResponse response = servicio.courses().topics().list(idClase).setPageSize(cantidadClases).execute();
+        return response.getTopic();
+    }
+
     //Se obtiene un topico dado el id de la clase a la que pertenece y su propio id
-    public static Topic obtenerTopicoporClaseeId(Classroom servicio, String idClase, String idTopico) throws IOException {
+    public static Topic obtenerTopicoconIds(Classroom servicio, String idClase, String idTopico) throws IOException {
         return servicio.courses().topics().get(idClase,idTopico).execute();
+    }
+
+    //Dar el nombre exacto del topico y el id de la clase
+    public static Topic obtenerTopicoporNombre(Classroom servicio, String idClase, String nombre) throws IOException {
+        List<Topic> topicos = obtenerTopicosdeClase(servicio,idClase, totaldeTopicosdeClase(servicio,idClase));
+        for (Topic topico : topicos) {
+            if(Objects.equals(nombre ,topico.getName() ) ) return topico;
+        }
+        return null;
     }
 
     // Se elimina un topico perteneciente a una clase
@@ -142,11 +161,6 @@ public class ClassroomJavaAPI {
         return tarea;
     }
 
-    private static List<Topic> obtenerTopicosdeCurso(Classroom servicio, String idClase , Integer cantidadClases ) throws IOException {
-        ListTopicResponse response = servicio.courses().topics().list(idClase).setPageSize(cantidadClases).execute();
-        return response.getTopic();
-    }
-
     //Se obtiene una tarea dado el id de la clase a la que pertenece y su propio id
     private static CourseWork obtenerTareaporClaseeId(Classroom servicio, String idClase, String idTarea) throws IOException {
         return servicio.courses().courseWork().get(idClase,idTarea).execute();
@@ -164,9 +178,18 @@ public class ClassroomJavaAPI {
         return tareas.size();
     }
 
-    public static List<CourseWork> obtenerTareasdeCurso(Classroom servicio, String idClase , Integer cantidadTareas ) throws IOException {
+    public static List<CourseWork> obtenerTareasdeClase(Classroom servicio, String idClase , Integer cantidadTareas ) throws IOException {
         ListCourseWorkResponse response = servicio.courses().courseWork().list(idClase).setPageSize(cantidadTareas).execute();
         return response.getCourseWork();
+    }
+
+    //Dar el nombre exacto de la tarea el id de la clase y el id del topico
+    public static CourseWork obtenerTareasporNombre(Classroom servicio, String idClase, String idTopico, String nombre) throws IOException {
+        List<CourseWork> tareas = obtenerTareasdeClase(servicio,idClase, totaldeTareasdeClase(servicio,idClase));
+        for (CourseWork tarea : tareas) {
+            if( (Objects.equals(tarea.getTopicId(), idTopico)) && Objects.equals(nombre ,tarea.getTitle() )  ) return tarea;
+        }
+        return null;
     }
 
     //Se agregar un profesor, solo con su correo a la clase indicada, mediante su ID
@@ -213,8 +236,8 @@ public class ClassroomJavaAPI {
     //Eliminar varias clases con sus respectivos topicos y tareas (listas con ids de clases)
     private static void borradoMasivo(Classroom servicio, List<String> listaClases) throws IOException {
         for (String idClase : listaClases) {
-            List<Topic> listaTopicos = obtenerTopicosdeCurso(servicio, idClase , totaldeTareasdeClase(servicio , idClase));
-            List<CourseWork> listaTareas = obtenerTareasdeCurso(servicio, idClase , totaldeTareasdeClase(servicio , idClase));
+            List<Topic> listaTopicos = obtenerTopicosdeClase(servicio, idClase , totaldeTareasdeClase(servicio , idClase));
+            List<CourseWork> listaTareas = obtenerTareasdeClase(servicio, idClase , totaldeTareasdeClase(servicio , idClase));
 
             for(CourseWork tarea : listaTareas){
                 eliminarTareadeClase(servicio,idClase,tarea.getId());

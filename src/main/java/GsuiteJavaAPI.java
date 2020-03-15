@@ -23,6 +23,7 @@ import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class GsuiteJavaAPI {
     private static final String APPLICATION_NAME = "Google Admin SDK Directory API Java";
@@ -33,7 +34,7 @@ public class GsuiteJavaAPI {
      * Los SCOPES son los permisos que se le da al servicio, dependiendo de lo que se necesite hacer.
      * Recuerde borrar los tokens en caso modifique los SCOPES
      */
-    private static final List<String> SCOPES = Arrays.asList(
+    private static final List<String> SCOPES = Collections.singletonList(
             "https://www.googleapis.com/auth/admin.directory.user"
     );
     private static final String CREDENTIALS_FILE_PATH = "/gsuite-credentials.json";
@@ -71,11 +72,11 @@ public class GsuiteJavaAPI {
         usuario.setPassword("Nueva Clave de Prueba"); // TODO: cambiar esto por un Hash o algo mas seguro
         usuario.setPrimaryEmail(correo);
 
-        Character parametro = correo.charAt(0);
+        char parametro = correo.charAt(0);
 
-        for(int i=0; i<listaGrupos.size() ; i++){
-            Character tipo= listaGrupos.get(i).getKey();
-            String grupo = listaGrupos.get(i).getValue();
+        for(Pair<Character,String> par : listaGrupos){
+            Character tipo= par.getKey();
+            String grupo = par.getValue();
             if(parametro == tipo) {
                 usuario.setOrgUnitPath(grupo);
             }
@@ -94,23 +95,29 @@ public class GsuiteJavaAPI {
         System.out.println(java.text.MessageFormat.format( "Usuario con correo {0} fue eliminado" , correo ));
     }
 
+    public static int totalUsuarios(Directory servicio) throws IOException{
+        Users response = servicio.users().list().setCustomer("my_customer").setOrderBy("email").execute();
+        List<User> usuarios = response.getUsers();
+        return usuarios.size();
+    }
+
+    //Imprime los primeros usuarios(depende de la cantidad) a las que se tienen accesso
+    private static List<User> listarUsuarios(Directory servicio, Integer cantidadCorreos) throws IOException{
+        Users response = servicio.users().list().setCustomer("my_customer").setMaxResults(cantidadCorreos).setOrderBy("email").execute();
+        return response.getUsers();
+    }
+
     //Obtener al Usuario de acuerdo a su ID
     private static User obtenerUsuarioporID(Directory servicio, String usuarioId) throws IOException{
         return servicio.users().get(usuarioId).execute();
     }
 
-    //Imprime los primeros usuarios(depende de la cantidad) a las que se tienen accesso
-    private static void listarUsuarios(Directory servicio, Integer cantidadCorreos) throws IOException{
-        Users result = servicio.users().list().setCustomer("my_customer").setMaxResults(cantidadCorreos).setOrderBy("email").execute();
-        List<User> usuarios = result.getUsers();
-        if (usuarios == null || usuarios.size() == 0) {
-            System.out.println("No se encontraron usuarios");
-        } else {
-            System.out.println("Usuarios:");
-            for (User usuario : usuarios) {
-                System.out.println(usuario.getName().getFullName());
-            }
+    private static User obtenerUsuarioporNombre(Directory servicio, String nombreCompleto) throws IOException{
+        List<User> listaUsuarios = listarUsuarios(servicio,totalUsuarios(servicio));
+        for(User usuario: listaUsuarios){
+            if(Objects.equals(usuario.getName().getFullName(), nombreCompleto)) return usuario;
         }
+        return null;
     }
 
     public static Directory obtenerServicio() throws IOException,GeneralSecurityException {
