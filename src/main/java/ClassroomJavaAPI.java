@@ -214,7 +214,7 @@ public class ClassroomJavaAPI {
         estudiante.setUserId(emailAlumno);
         estudiante = servicio.courses().students().create(idClase, estudiante).execute();
 
-        System.out.println(java.text.MessageFormat.format( "EL estudiante {0} se agrego a la clase con id {1}" , estudiante.getProfile().getName().getFullName(), idClase ));
+        System.out.println(java.text.MessageFormat.format( "EL estudiante {0} con correo {1} se agrego a la clase con id {2}" , estudiante.getProfile().getName().getFullName(), emailAlumno,idClase ));
         return estudiante;
     }
 

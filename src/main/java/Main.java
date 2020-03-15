@@ -1,9 +1,7 @@
 import com.google.api.services.classroom.Classroom;
 import com.google.api.services.admin.directory.Directory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.security.GeneralSecurityException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +11,7 @@ import java.util.*;
 import com.google.api.services.classroom.model.*;
 import com.google.api.services.admin.directory.model.*;
 import javafx.util.Pair;
-import java.io.Reader;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -198,12 +196,38 @@ public class Main {
 
     }
 
+    private static void readTXT(Classroom servicioClase,String filePath, String nombreClase) throws IOException {
+        File archivo = new File(filePath);
+        Scanner lector = new Scanner(archivo);
+
+        //Course clase = ClassroomJavaAPI.obtenerClaseporId(servicioClase,"53401726393");
+        Course clase = ClassroomJavaAPI.obtenerClaseporNombre(servicioClase,nombreClase);
+        if(Objects.equals(clase,null)){
+            System.out.println(java.text.MessageFormat.format( "La clase de nombre {0} no existe " , nombreClase ));
+            return;
+        }
+
+        while (lector.hasNextLine()) {
+            String email = lector.nextLine();
+            try{
+                ClassroomJavaAPI.agregarAlumnoaClase(servicioClase,email,clase.getId(),clase.getEnrollmentCode());
+            }
+            catch (Exception e){
+                System.out.println(java.text.MessageFormat.format( "No se puede agregar al alumno con correo {0}. O el alumno ya esta en la clase o el correo no es valido" , email ));
+            }
+        }
+        lector.close();
+    }
+
+
     public static void main(String... args) throws IOException, GeneralSecurityException {
 
         Classroom servicioClase = ClassroomJavaAPI.obtenerServicio();
         Directory servicioUsuario = GsuiteJavaAPI.obtenerServicio();
 
-        cargarClases(servicioClase);
-        llenarClase(servicioClase,"Clase de Prueba 1");
+        //cargarClases(servicioClase);
+        //llenarClase(servicioClase,"Clase de Prueba 1");
+
+        readTXT(servicioClase,"src/main/resources/4años_alumnos.txt", "4 AÑOS");
     }
 }
