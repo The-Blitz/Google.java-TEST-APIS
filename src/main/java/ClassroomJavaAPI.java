@@ -32,7 +32,8 @@ public class ClassroomJavaAPI {
     private static final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/classroom.courses", "https://www.googleapis.com/auth/classroom.coursework.students",
             "https://www.googleapis.com/auth/classroom.rosters","https://www.googleapis.com/auth/classroom.announcements",
-            "https://www.googleapis.com/auth/classroom.topics"
+            "https://www.googleapis.com/auth/classroom.topics", "https://www.googleapis.com/auth/classroom.profile.emails",
+            "https://www.googleapis.com/auth/classroom.profile.photos"
     );
     private static final String CREDENTIALS_FILE_PATH = "/classroom-credentials.json";
 
@@ -202,6 +203,26 @@ public class ClassroomJavaAPI {
         return profesor;
     }
 
+    public static Student agregarAlumnoaClase(Classroom servicio, String emailAlumno, String idClase, String codigoClase) throws IOException{
+        Student estudiante = new Student();
+        estudiante.setUserId(emailAlumno);
+        estudiante = servicio.courses().students().create(idClase, estudiante).execute();
+
+        System.out.println(java.text.MessageFormat.format( "EL estudiante {0} se agrego a la clase con id {1}" , estudiante.getProfile().getName().getFullName(), idClase ));
+        return estudiante;
+    }
+
+    public static void eliminarAlumnodeClase(Classroom servicio, String emailAlumno , String idClase) throws IOException{
+        servicio.courses().students().delete(idClase,emailAlumno).execute();
+        System.out.println(java.text.MessageFormat.format( "El alumno con id {0} fue eliminado de la clase con id {1}" , emailAlumno, idClase ));
+    }
+
+    public static void eliminarAlumnosdeClase(Classroom servicio, List<String> emails , String idClase) throws IOException{
+        for(String email : emails){
+            eliminarAlumnodeClase(servicio,email,idClase);
+        }
+    }
+
     //Se invita a una persona a una clase de acuerdo a su rol(puede ser alumno o profesor)
     public static void invitarPersonaaClase(Classroom servicio, String email, String idClase, String tipo ) throws IOException{
         // el tipo debe ser o "STUDENT" o TEACHER"
@@ -216,6 +237,15 @@ public class ClassroomJavaAPI {
         System.out.println(java.text.MessageFormat.format( "Se invito a la persona con id {0} a la clase con id {1}" , invitacion.getUserId(), invitacion.getCourseId() ));
 
     }
+
+    public static Invitation obtenerInvitacionporId(Classroom servicio , String idInvitacion) throws IOException{
+        return servicio.invitations().get(idInvitacion).execute();
+    }
+
+    public static void eliminarInvitacionPersona(Classroom servicio, String idInvitacion ) throws IOException{
+        servicio.invitations().delete(idInvitacion);
+    }
+
 
     //Generar varias clases con varios topicos y tareas (listas con nombres)
     public static List<String> cargaMasiva(Classroom servicio, List<String> listaClases, List<String> listaTopicos , List<String> listaTareas) throws IOException {
