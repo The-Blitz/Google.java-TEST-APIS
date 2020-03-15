@@ -2,6 +2,8 @@ import com.google.api.services.classroom.Classroom;
 import com.google.api.services.admin.directory.Directory;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +13,14 @@ import java.util.*;
 import com.google.api.services.classroom.model.*;
 import com.google.api.services.admin.directory.model.*;
 import javafx.util.Pair;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+
 
 public class Main {
 
@@ -42,6 +52,33 @@ public class Main {
         GsuiteJavaAPI.borrarUsuario(servicioUsuario,"a00000007@sacooliveros.edu.pe" );
     }
 
+    private static void readCSV(String filePath) throws IOException {
+        InputStream in = Main.class.getResourceAsStream(filePath);
+        Reader reader = new InputStreamReader(in);
+        CSVParser csvParser = new CSVParser(reader, CSVFormat.EXCEL.withHeader("persona_documento_numero" ,
+                "a_paterno", "a_materno", "nombre_completo", "persona_correo") );
+
+        for (CSVRecord csvRecord : csvParser) {
+            // Accessing Values by Column Index
+            String dni = csvRecord.get(0);
+            /*
+            String apaterno = csvRecord.get(1);
+            String amaterno = csvRecord.get(2);
+            String nombre = csvRecord.get(3);
+            String correo = csvRecord.get(4);
+            */
+            System.out.println("Record No - " + csvRecord.getRecordNumber());
+            System.out.println("---------------");
+            System.out.println("Dni : " + dni);/*
+            System.out.println("apaterno : " + apaterno);
+            System.out.println("amaterno : " + amaterno);
+            System.out.println("nombre : " + nombre);
+            System.out.println("correo : " + correo);*/
+            System.out.println("---------------\n\n");
+        }
+
+    }
+
     public static void main(String... args) throws IOException, GeneralSecurityException {
 
         Classroom servicioClase = ClassroomJavaAPI.obtenerServicio();
@@ -49,8 +86,6 @@ public class Main {
 
         //demoClase(servicioClase);
         //demoUsuario(servicioUsuario);
-
-
 
     }
 }
