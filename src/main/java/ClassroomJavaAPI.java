@@ -60,18 +60,15 @@ public class ClassroomJavaAPI {
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 
-    //Imprime las primeras clases(depende de la cantidad) a las que se tienen accesso
-    public static void listarClases(Classroom servicio , Integer cantidadClases) throws IOException{
-        ListCoursesResponse response = servicio.courses().list().setPageSize(cantidadClases).execute();
+    public static int totaldeClases(Classroom servicio) throws IOException{
+        ListCoursesResponse response = servicio.courses().list().execute();
         List<Course> clases = response.getCourses();
-        if (clases == null || clases.size() == 0) {
-            System.out.println("No se encontraron clases");
-        } else {
-            System.out.println("Courses:");
-            for (Course clase : clases) {
-                System.out.printf("%s %s\n", clase.getName() , clase.getId());
-            }
-        }
+        return clases.size();
+    }
+
+    public static List<Course> listarClases(Classroom servicio , Integer cantidadClases) throws IOException{
+        ListCoursesResponse response = servicio.courses().list().setPageSize(cantidadClases).execute();
+        return response.getCourses();
     }
 
     //Se crea una clase, solo debe enviarle un nombre
@@ -87,19 +84,25 @@ public class ClassroomJavaAPI {
         return clase;
     }
 
+    //Obtener una clase dando su Id
     private static Course obtenerClaseporId(Classroom servicio , String id) throws IOException {
         return servicio.courses().get(id).execute();
     }
+
+    private static void archivarClase(Classroom servicio, String idClase ) throws IOException {
+        Course clase = obtenerClaseporId(servicio, idClase);
+        clase.setCourseState("ARCHIVED");
+        servicio.courses().update(idClase, clase);
+    }
+
     // Se elimina una clase(antes de eliminar debe estar archivada)
-    // TODO: archivar una clase
-    private static void borrarClase(Classroom servicio , String id) throws IOException {
+    private static void eliminarClase(Classroom servicio , String id) throws IOException {
         servicio.courses().delete(id).execute();
         System.out.println(java.text.MessageFormat.format( "La clase: {0} fue eliminada" , id ));
     }
 
 
     //Se crea un nuevo topico, y se le agrega a una clase usando el id de la clase y el nombre del nuevo topico
-    // TODO: eliminar Topico de Clase
     private static Topic agregarTopicoaClase(Classroom servicio , String idClase ,String nombreTopico ) throws IOException{
         Topic topico = new Topic();
         topico.set("name", nombreTopico);
@@ -109,8 +112,24 @@ public class ClassroomJavaAPI {
         return topico;
     }
 
+    public static int totaldeTopicosdeClase(Classroom servicio, String idClase) throws IOException{
+        ListTopicResponse response = servicio.courses().topics().list(idClase).execute();
+        List<Topic> topicos = response.getTopic();
+        return topicos.size();
+    }
+
+    //Se obtiene un topico dado el id de la clase a la que pertenece y su propio id
+    public static Topic obtenerTopicoporClaseeId(Classroom servicio, String idClase, String idTopico) throws IOException {
+        return servicio.courses().topics().get(idClase,idTopico).execute();
+    }
+
+    // Se elimina un topico perteneciente a una clase
+    private static void eliminarTopico(Classroom servicio, String idClase, String idTopico) throws IOException {
+        servicio.courses().topics().delete(idClase,idTopico).execute();
+        System.out.println(java.text.MessageFormat.format( "El topico de id {0} de la clase con id: {1} fue eliminado" , idClase, idTopico ));
+    }
+
     //Se crea una nueva tarea para algun topico perteneciente a una clase.
-    //TODO: eliminar tarea de clase
     private static CourseWork agregarTareaaTopico(Classroom servicio , String idClase , String idTopico, String tituloTarea ,String tipoTarea ) throws IOException{
         CourseWork tarea = new CourseWork();
         tarea.set("title", tituloTarea);
@@ -121,6 +140,33 @@ public class ClassroomJavaAPI {
         tarea  = servicio.courses().courseWork().create(idClase,tarea).execute();
         System.out.println(java.text.MessageFormat.format( "Se Creo la tarea con id {0} para el topico con id {1}" , tarea.getId(), tarea.getTopicId() ));
         return tarea;
+    }
+
+    private static List<Topic> obtenerTopicosdeCurso(Classroom servicio, String idClase , Integer cantidadClases ) throws IOException {
+        ListTopicResponse response = servicio.courses().topics().list(idClase).setPageSize(cantidadClases).execute();
+        return response.getTopic();
+    }
+
+    //Se obtiene una tarea dado el id de la clase a la que pertenece y su propio id
+    private static CourseWork obtenerTareaporClaseeId(Classroom servicio, String idClase, String idTarea) throws IOException {
+        return servicio.courses().courseWork().get(idClase,idTarea).execute();
+    }
+
+    //Se elimina un topico dado el id de la clase a la que pertenece y su propio id
+    private static void eliminarTareadeClase(Classroom servicio, String idClase, String idTarea) throws IOException {
+        servicio.courses().courseWork().delete(idClase,idTarea);
+        System.out.println(java.text.MessageFormat.format( "La tarea de id {0} de la clase con id: {1} fue eliminada" , idClase, idTarea ));
+    }
+
+    public static int totaldeTareasdeClase(Classroom servicio, String idClase ) throws IOException {
+        ListCourseWorkResponse response = servicio.courses().courseWork().list(idClase).execute();
+        List<CourseWork> tareas = response.getCourseWork();
+        return tareas.size();
+    }
+
+    public static List<CourseWork> obtenerTareasdeCurso(Classroom servicio, String idClase , Integer cantidadTareas ) throws IOException {
+        ListCourseWorkResponse response = servicio.courses().courseWork().list(idClase).setPageSize(cantidadTareas).execute();
+        return response.getCourseWork();
     }
 
     //Se agregar un profesor, solo con su correo a la clase indicada, mediante su ID
@@ -150,7 +196,7 @@ public class ClassroomJavaAPI {
 
     }
 
-    //Generar varias clases con varios topicos y tareas
+    //Generar varias clases con varios topicos y tareas (listas con nombres)
     private static void cargaMasiva(Classroom servicio, List<String> listaClases, List<String> listaTopicos , List<String> listaTareas) throws IOException {
         for (String nombreClase : listaClases) {
             Course claseActual = crearClase(servicio , nombreClase);
@@ -164,18 +210,29 @@ public class ClassroomJavaAPI {
 
     }
 
+    //Eliminar varias clases con sus respectivos topicos y tareas (listas con ids de clases)
+    private static void borradoMasivo(Classroom servicio, List<String> listaClases) throws IOException {
+        for (String idClase : listaClases) {
+            List<Topic> listaTopicos = obtenerTopicosdeCurso(servicio, idClase , totaldeTareasdeClase(servicio , idClase));
+            List<CourseWork> listaTareas = obtenerTareasdeCurso(servicio, idClase , totaldeTareasdeClase(servicio , idClase));
+
+            for(CourseWork tarea : listaTareas){
+                eliminarTareadeClase(servicio,idClase,tarea.getId());
+            }
+
+            for(Topic topico : listaTopicos) {
+                eliminarTopico(servicio,idClase,topico.getTopicId());
+            }
+
+            archivarClase(servicio, idClase);
+            eliminarClase(servicio,idClase);
+        }
+
+    }
+
     public static Classroom obtenerServicio() throws IOException,GeneralSecurityException {
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         return new Classroom.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT)).setApplicationName(APPLICATION_NAME).build();
     }
 
-    public static void main(String... args) throws IOException, GeneralSecurityException {
-
-        Classroom servicio = obtenerServicio();
-
-        //listarClases(servicio,5);
-
-        //agregarTopicoaClase(servicio, "62895258692","Algebra" );
-        //agregarTareaaTopico(servicio,"62895258692","64703673742","Tarea 2", "ASSIGNMENT");
-    }
 }
