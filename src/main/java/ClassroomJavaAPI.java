@@ -87,7 +87,7 @@ public class ClassroomJavaAPI {
     }
 
     //Dar el nombre exacto de la clase
-    private static Course obtenerClaseporNombre(Classroom servicio , String nombre) throws IOException {
+    public static Course obtenerClaseporNombre(Classroom servicio , String nombre) throws IOException {
         List<Course> clases = listarClases(servicio, totaldeClases(servicio));
         for (Course clase : clases) {
             if(Objects.equals(nombre ,clase.getName() ) ) return clase;
@@ -154,12 +154,18 @@ public class ClassroomJavaAPI {
         tarea.set("title", tituloTarea);
         tarea.set("workType", tipoTarea); // EL tipo de tarea puede ser: ASSIGNMENT,SHORT_ANSWER_QUESTION o MULTIPLE_CHOICE_QUESTION
         tarea.set("topicId", idTopico);
-        tarea.set("state", "DRAFT"); // EL estado de la tarea puede ser: DRAFT o PUBLISHED
+        tarea.set("state", "PUBLISHED"); // EL estado de la tarea puede ser: DRAFT o PUBLISHED
+        tarea.setMaxPoints(20.0);
 
         tarea  = servicio.courses().courseWork().create(idClase,tarea).execute();
         System.out.println(java.text.MessageFormat.format( "Se Creo la tarea con id {0} para el topico con id {1}" , tarea.getId(), tarea.getTopicId() ));
         return tarea;
     }
+    /*
+    public static CourseWork agregarMaterial(Classroom servicio,String idClase, String idTarea) throws IOException{
+        CourseWork tarea = obtenerTareaporClaseeId(servicio,idClase,idTarea);
+    }
+    */
 
     //Se obtiene una tarea dado el id de la clase a la que pertenece y su propio id
     public static CourseWork obtenerTareaporClaseeId(Classroom servicio, String idClase, String idTarea) throws IOException {

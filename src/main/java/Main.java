@@ -24,6 +24,14 @@ import org.apache.commons.csv.CSVRecord;
 
 public class Main {
 
+    private static HashMap< String, HashMap< String , HashSet<String> > > estructuraClases = new HashMap<>();
+    private static HashMap< String, HashSet<String> > clasesPorNombre  = new HashMap<>();
+    private static HashMap< String, HashMap<String,String > > topicosPorNombre = new HashMap<>();
+    private static HashMap< String, HashMap<String,String > > tareasPorNombre = new HashMap<>();
+
+    private static List<String> listaCiencias = new ArrayList<>();
+    private static List<String> listaLetras = new ArrayList<>();
+
     private static String objectToJson(Object objeto) throws JsonProcessingException {
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
         return ow.writeValueAsString(objeto);
@@ -79,13 +87,123 @@ public class Main {
 
     }
 
+    private static void cargarClases(Classroom servicioClase) throws IOException{
+        List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase,ClassroomJavaAPI.totaldeClases(servicioClase) );
+        for (Course clase : listaClases) {
+            if( ! Objects.equals(clase.getName(),"Clase de Prueba 1")) continue;
+
+            List<Topic> listaTopicos = ClassroomJavaAPI.obtenerTopicosdeClase(servicioClase, clase.getId() , ClassroomJavaAPI.totaldeTopicosdeClase(servicioClase, clase.getId()));
+            List<CourseWork> listaTareas = ClassroomJavaAPI.obtenerTareasdeClase(servicioClase, clase.getId() , ClassroomJavaAPI.totaldeTareasdeClase(servicioClase, clase.getId()));
+
+            if(!estructuraClases.containsKey(clase.getName())) estructuraClases.put(clase.getName()  , new HashMap<>() ) ;
+            if(clasesPorNombre.isEmpty()) clasesPorNombre.put(clase.getName(),  new HashSet<>() );
+            clasesPorNombre.get(clase.getName()).add(clase.getId());
+
+            for(Topic topico: listaTopicos){
+                if(!estructuraClases.get(clase.getName()).containsKey(topico.getName()))
+                    estructuraClases.get(clase.getName()).put(topico.getName(), new HashSet<>());
+                if(topicosPorNombre.isEmpty()) topicosPorNombre.put(topico.getName(),  new HashMap<>() );
+                topicosPorNombre.get(topico.getName()).put(clase.getId(),topico.getTopicId());
+
+                for(CourseWork tarea: listaTareas){
+                    if(Objects.equals(tarea.getState(),"DRAFT")) continue;
+                    if(!estructuraClases.get(clase.getName()).get(topico.getName()).contains(tarea.getTitle()) )
+                        estructuraClases.get(clase.getName()).get(topico.getName()).add(tarea.getTitle());
+                    if(tareasPorNombre.isEmpty()) tareasPorNombre.put(tarea.getTitle(),  new HashMap<>() );
+                    tareasPorNombre.get(tarea.getTitle()).put(topico.getTopicId(),tarea.getId());
+                }
+            }
+
+        }
+
+        listaCiencias.add("HELICOTEORIA - CAPITULO 01");
+        listaCiencias.add("HELICOPRACTICA - CAPITULO 01");
+        listaCiencias.add("HELICOTALLER - PROBLEMAS - CAPITULO 01");
+        listaCiencias.add("HELICOTALLER - SOLUCIONARIO - CAPITULO 01");
+        listaCiencias.add("HELICOTAREA");
+        listaCiencias.add("RESOLUCION DE LA HELICOTAREA");
+
+        listaLetras.add("HELICOTEORIA - HELICOPRACTICA - CAPITULO 01");
+        listaLetras.add("HELICOTALLER - PREGUNTAS - CAPITULO 01");
+        listaLetras.add("HELICOTALLER - SOLUCIONARIO - CAPITULO 01");
+        listaLetras.add("HELICOTAREA");
+        listaLetras.add("RESOLUCION DE LA HELICOTAREA");
+
+    }
+
+    private static List<Pair<String,String>> listadeTopicos(){
+        List<Pair<String,String>> clases = new ArrayList<>();
+
+        clases.add(new Pair<>("Ciencias", "Algebra") );
+        clases.add(new Pair<>("Ciencias", "Aritmética") );
+        clases.add(new Pair<>("Ciencias", "Biología") );
+        clases.add(new Pair<>("Ciencias", "Física") );
+        clases.add(new Pair<>("Ciencias", "Geometría") );
+        clases.add(new Pair<>("Ciencias", "Química") );
+        clases.add(new Pair<>("Ciencias", "Raz. Mat") );
+        clases.add(new Pair<>("Ciencias", "Trigonometria") );
+
+        clases.add(new Pair<>("Letras", "Geografía") );
+        clases.add(new Pair<>("Letras", "Historia del Perú") );
+        clases.add(new Pair<>("Letras", "Inglés") );
+        clases.add(new Pair<>("Letras", "Lenguaje") );
+        clases.add(new Pair<>("Letras", "Literatura") );
+        clases.add(new Pair<>("Letras", "Raz. Verbal") );
+        clases.add(new Pair<>("Letras", "Teatro y Orat") );
+
+
+
+        return clases;
+    }
+
+    private static void llenarClase(Classroom servicioClase, String nombreClase ) throws IOException{
+
+        List<Pair<String,String>> nombresTopicos = listadeTopicos();
+
+        for( String claseId : clasesPorNombre.get(nombreClase)){
+            Course clase = ClassroomJavaAPI.obtenerClaseporId(servicioClase,claseId);
+
+            for(Pair<String,String> parTopico: nombresTopicos){
+                String tipo = parTopico.getKey();
+                String nombre = parTopico.getValue();
+
+                if(estructuraClases.get(nombreClase).containsKey(nombre)) {
+
+                    if(topicosPorNombre.get(nombre).containsKey(claseId)){
+                        Topic topico = ClassroomJavaAPI.obtenerTopicoconIds(servicioClase, claseId,
+                                topicosPorNombre.get(nombre).get(claseId) );
+
+                        if(Objects.equals(tipo,"Ciencias")) {
+
+                            for(String nuevaTarea : listaCiencias){
+                                if ( (!estructuraClases.get(nombreClase).get(nombre).contains(nuevaTarea)) || (!tareasPorNombre.get(nuevaTarea).containsKey(topico.getTopicId())) )
+                                    ClassroomJavaAPI.agregarTareaaTopico(servicioClase, claseId, topico.getTopicId(), nuevaTarea, "ASSIGNMENT");
+                            }
+                        }
+
+                        else if(Objects.equals(tipo,"Letras")){
+                            for(String nuevaTarea : listaLetras){
+                                if ((!estructuraClases.get(nombreClase).get(nombre).contains(nuevaTarea)) || (!tareasPorNombre.get(nuevaTarea).containsKey(topico.getTopicId())) )
+                                    ClassroomJavaAPI.agregarTareaaTopico(servicioClase, claseId, topico.getTopicId(), nuevaTarea, "ASSIGNMENT");
+                            }
+                        }
+                    }
+
+                }
+
+            }
+
+        }
+
+
+    }
+
     public static void main(String... args) throws IOException, GeneralSecurityException {
 
         Classroom servicioClase = ClassroomJavaAPI.obtenerServicio();
         Directory servicioUsuario = GsuiteJavaAPI.obtenerServicio();
 
-        //demoClase(servicioClase);
-        //demoUsuario(servicioUsuario);
-
+        cargarClases(servicioClase);
+        llenarClase(servicioClase,"Clase de Prueba 1");
     }
 }
