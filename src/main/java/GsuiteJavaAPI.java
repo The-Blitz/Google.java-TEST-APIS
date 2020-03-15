@@ -20,10 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class GsuiteJavaAPI {
     private static final String APPLICATION_NAME = "Google Admin SDK Directory API Java";
@@ -104,12 +101,13 @@ public class GsuiteJavaAPI {
     //Imprime los primeros usuarios(depende de la cantidad) a las que se tienen accesso
     public static List<User> listarUsuarios(Directory servicio, Integer cantidadCorreos) throws IOException{
         Users response = servicio.users().list().setCustomer("my_customer").setMaxResults(cantidadCorreos).setOrderBy("email").execute();
+        if(response.isEmpty()) return new ArrayList<>();
         return response.getUsers();
     }
 
-    //Obtener al Usuario de acuerdo a su ID
-    public static User obtenerUsuarioporID(Directory servicio, String usuarioId) throws IOException{
-        return servicio.users().get(usuarioId).execute();
+    //Obtener al Usuario de acuerdo a su correo
+    public static User obtenerUsuarioporEmail(Directory servicio, String usuarioEmail) throws IOException{
+        return servicio.users().get(usuarioEmail).execute();
     }
 
     private static User obtenerUsuarioporNombre(Directory servicio, String nombreCompleto) throws IOException{
