@@ -61,7 +61,7 @@ public class GsuiteJavaAPI {
     }
 
     //Se crea un nuevo correo email, con los datos de la persona
-    private static User crearUsuario(Directory servicio , String correo, String apellidos, String nombres, List<Pair<Character,String>> listaGrupos) throws IOException{
+    public static User crearUsuario(Directory servicio , String correo, String apellidos, String nombres, List<Pair<Character,String>> listaGrupos) throws IOException{
         UserName nombreUsuario = new UserName();
         nombreUsuario.setGivenName(nombres);
         nombreUsuario.setFamilyName(apellidos);
@@ -88,9 +88,9 @@ public class GsuiteJavaAPI {
         return usuario;
     }
 
-    //TODO: Agregar excepcion
+    //TODO: Manejar excepciones en todas las clases
     //Se elimina el correo en caso exista
-    private static void borrarUsuario(Directory servicio, String correo) throws IOException{
+    public static void borrarUsuario(Directory servicio, String correo) throws IOException{
         servicio.users().delete(correo).execute();
         System.out.println(java.text.MessageFormat.format( "Usuario con correo {0} fue eliminado" , correo ));
     }
@@ -102,13 +102,13 @@ public class GsuiteJavaAPI {
     }
 
     //Imprime los primeros usuarios(depende de la cantidad) a las que se tienen accesso
-    private static List<User> listarUsuarios(Directory servicio, Integer cantidadCorreos) throws IOException{
+    public static List<User> listarUsuarios(Directory servicio, Integer cantidadCorreos) throws IOException{
         Users response = servicio.users().list().setCustomer("my_customer").setMaxResults(cantidadCorreos).setOrderBy("email").execute();
         return response.getUsers();
     }
 
     //Obtener al Usuario de acuerdo a su ID
-    private static User obtenerUsuarioporID(Directory servicio, String usuarioId) throws IOException{
+    public static User obtenerUsuarioporID(Directory servicio, String usuarioId) throws IOException{
         return servicio.users().get(usuarioId).execute();
     }
 
