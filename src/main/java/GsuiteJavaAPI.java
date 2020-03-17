@@ -22,10 +22,14 @@ import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.*;
 
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 public class GsuiteJavaAPI {
     private static final String APPLICATION_NAME = "Google Admin SDK Directory API Java";
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String TOKENS_DIRECTORY_PATH = "gsuite-tokens";
+    private final static Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
     /**
      * Los SCOPES son los permisos que se le da al servicio, dependiendo de lo que se necesite hacer.
@@ -58,51 +62,81 @@ public class GsuiteJavaAPI {
     }
 
     //Se crea un nuevo correo email, con los datos de la persona
-    public static User crearUsuario(Directory servicio , String correo, String apellidos, String nombres, List<Pair<Character,String>> listaGrupos) throws IOException{
+    public static User crearUsuario(Directory servicio , String email, String apellidos, String nombres, List<Pair<Character,String>> listaGrupos) throws IOException{
         UserName nombreUsuario = new UserName();
         nombreUsuario.setGivenName(nombres);
         nombreUsuario.setFamilyName(apellidos);
-        nombreUsuario.setFullName(nombres+" "+apellidos);
+        nombreUsuario.setFullName(nombres + " " + apellidos);
 
         User usuario = new User();
-        usuario.setName(nombreUsuario);
-        usuario.setPassword("Nueva Clave de Prueba"); // TODO: cambiar esto por un Hash o algo mas seguro
-        usuario.setPrimaryEmail(correo);
 
-        char parametro = correo.charAt(0);
+        try {
+            usuario.setName(nombreUsuario);
+            usuario.setPassword("Nueva Clave de Prueba"); // TODO: cambiar esto por un Hash o algo mas seguro
+            usuario.setPrimaryEmail(email);
 
-        for(Pair<Character,String> par : listaGrupos){
-            Character tipo= par.getKey();
-            String grupo = par.getValue();
-            if(parametro == tipo) {
-                usuario.setOrgUnitPath(grupo);
+            char parametro = email.charAt(0);
+
+            for (Pair<Character, String> par : listaGrupos) {
+                Character tipo = par.getKey();
+                String grupo = par.getValue();
+                if (parametro == tipo) {
+                    usuario.setOrgUnitPath(grupo);
+                }
             }
+
+            usuario = servicio.users().insert(usuario).execute();
+            LOGGER.log(Level.INFO,java.text.MessageFormat.format("{0} con correo {1} fue creado con id {2}", usuario.getName().getFullName(), usuario.getPrimaryEmail(), usuario.getId()));
         }
-
-        usuario = servicio.users().insert(usuario).execute();
-        System.out.println(java.text.MessageFormat.format( "{0} con correo {1} fue creado con id {2}" , usuario.getName().getFullName(), usuario.getPrimaryEmail(), usuario.getId() ));
-
+        catch (Exception e){
+            LOGGER.log(Level.WARNING," No se pudo crear al usuario de correo " + email);
+        }
         return usuario;
     }
 
-    //TODO: Manejar excepciones en todas las clases
+    //TODO: Manejar excepciones los metodos que faltan
     //Se elimina el correo en caso exista
-    public static void borrarUsuario(Directory servicio, String correo) throws IOException{
-        servicio.users().delete(correo).execute();
-        System.out.println(java.text.MessageFormat.format( "Usuario con correo {0} fue eliminado" , correo ));
+    public static void borrarUsuario(Directory servicio, String email) throws IOException{
+        try{
+            servicio.users().delete(email).execute();
+            LOGGER.log(Level.INFO,java.text.MessageFormat.format( "Usuario con correo {0} fue eliminado" , email ));
+        }
+        catch (Exception e){
+            LOGGER.log(Level.WARNING, "No se pudo eliminar al usuario de correo " + email);
+        }
     }
 
     public static int totalUsuarios(Directory servicio) throws IOException{
-        Users response = servicio.users().list().setCustomer("my_customer").setOrderBy("email").execute();
-        List<User> usuarios = response.getUsers();
-        return usuarios.size();
+        try{
+            Users response = servicio.users().list().setCustomer("my_customer").setOrderBy("email").execute();
+            if(response == null){
+                LOGGER.log(Level.WARNING , "No se encontraron usuarios") ;
+                return 0;
+            }
+            List<User> usuarios = response.getUsers();
+            return usuarios.size();
+        }
+        catch (Exception e){
+            LOGGER.log(Level.WARNING , "Hubo un problema con el servicio") ;
+            return 0;
+        }
     }
 
     //Imprime los primeros usuarios(depende de la cantidad) a las que se tienen accesso
     public static List<User> listarUsuarios(Directory servicio, Integer cantidadCorreos) throws IOException{
-        Users response = servicio.users().list().setCustomer("my_customer").setMaxResults(cantidadCorreos).setOrderBy("email").execute();
-        if(response.isEmpty()) return new ArrayList<>();
-        return response.getUsers();
+        try{
+            Users response = servicio.users().list().setCustomer("my_customer").setMaxResults(cantidadCorreos).setOrderBy("email").execute();
+            if(response.isEmpty()) {
+                LOGGER.log(Level.WARNING , "No se encontraron usuarios") ;
+                return new ArrayList<>();
+            }
+
+            return response.getUsers();
+        }
+        catch (Exception e){
+            LOGGER.log(Level.WARNING , "Hubo un problema con el servicio") ;
+            return new ArrayList<>();
+        }
     }
 
     //Obtener al Usuario de acuerdo a su correo
@@ -123,10 +157,4 @@ public class GsuiteJavaAPI {
         return new Directory.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT)).setApplicationName(APPLICATION_NAME).build();
     }
 
-    public static void main(String... args) throws IOException, GeneralSecurityException {
-
-        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-        Directory servicio = obtenerServicio();
-
-    }
 }

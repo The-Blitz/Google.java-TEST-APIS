@@ -14,6 +14,8 @@ import javafx.util.Pair;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -22,13 +24,26 @@ import org.apache.commons.csv.CSVRecord;
 
 public class Main {
 
+    private final static Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+
+    // NOMBRECLASE -> TOPICO -> TAREA
     private static HashMap< String, HashMap< String , HashSet<String> > > estructuraClases = new HashMap<>();
+    //NOMBRECLASE -> IDCLASE
     private static HashMap< String, HashSet<String> > clasesPorNombre  = new HashMap<>();
+    //NOMBRETOPICO -> IDCLASE-> IDTOPICO
     private static HashMap< String, HashMap<String,String > > topicosPorNombre = new HashMap<>();
+    //NOMBREA TAREA -> IDTOPICO -> IDTAREA
     private static HashMap< String, HashMap<String,String > > tareasPorNombre = new HashMap<>();
 
-    private static List<String> listaCiencias = new ArrayList<>();
-    private static List<String> listaLetras = new ArrayList<>();
+    private static Course buscarClase(Classroom servicioClase, String nombreClase){
+        try{
+            return ClassroomJavaAPI.obtenerClaseporId(servicioClase , clasesPorNombre.get(nombreClase).stream().findFirst().get() );
+        }
+        catch(Exception e){
+            LOGGER.log(Level.WARNING , "La clase dada no pudo encontrarse");
+            return new Course();
+        }
+    }
 
     private static String objectToJson(Object objeto) throws JsonProcessingException {
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
@@ -65,21 +80,20 @@ public class Main {
                 "a_paterno", "a_materno", "nombre_completo", "persona_correo") );
 
         for (CSVRecord csvRecord : csvParser) {
-            // Accessing Values by Column Index
+            //Obteniendo valores por columna
             String dni = csvRecord.get(0);
-            /*
             String apaterno = csvRecord.get(1);
             String amaterno = csvRecord.get(2);
             String nombre = csvRecord.get(3);
             String correo = csvRecord.get(4);
-            */
+
             System.out.println("Record No - " + csvRecord.getRecordNumber());
             System.out.println("---------------");
-            System.out.println("Dni : " + dni);/*
+            System.out.println("Dni : " + dni);
             System.out.println("apaterno : " + apaterno);
             System.out.println("amaterno : " + amaterno);
             System.out.println("nombre : " + nombre);
-            System.out.println("correo : " + correo);*/
+            System.out.println("correo : " + correo);
             System.out.println("---------------\n\n");
         }
 
@@ -114,20 +128,10 @@ public class Main {
 
         }
 
-        listaCiencias.add("HELICOTEORIA - CAPITULO 01");
-        listaCiencias.add("HELICOPRACTICA - CAPITULO 01");
-        listaCiencias.add("HELICOTALLER - PROBLEMAS - CAPITULO 01");
-        listaCiencias.add("HELICOTALLER - SOLUCIONARIO - CAPITULO 01");
-        listaCiencias.add("HELICOTAREA");
-        listaCiencias.add("RESOLUCION DE LA HELICOTAREA");
-
-        listaLetras.add("HELICOTEORIA - HELICOPRACTICA - CAPITULO 01");
-        listaLetras.add("HELICOTALLER - PREGUNTAS - CAPITULO 01");
-        listaLetras.add("HELICOTALLER - SOLUCIONARIO - CAPITULO 01");
-        listaLetras.add("HELICOTAREA");
-        listaLetras.add("RESOLUCION DE LA HELICOTAREA");
-
     }
+
+    private static List<String> listaCiencias = new ArrayList<>();
+    private static List<String> listaLetras = new ArrayList<>();
 
     private static List<Pair<String,String>> listadeTopicos(){
         List<Pair<String,String>> clases = new ArrayList<>();
@@ -149,7 +153,18 @@ public class Main {
         clases.add(new Pair<>("Letras", "Raz. Verbal") );
         clases.add(new Pair<>("Letras", "Teatro y Orat") );
 
+        listaCiencias.add("HELICOTEORIA - CAPITULO 01");
+        listaCiencias.add("HELICOPRACTICA - CAPITULO 01");
+        listaCiencias.add("HELICOTALLER - PROBLEMAS - CAPITULO 01");
+        listaCiencias.add("HELICOTALLER - SOLUCIONARIO - CAPITULO 01");
+        listaCiencias.add("HELICOTAREA");
+        listaCiencias.add("RESOLUCION DE LA HELICOTAREA");
 
+        listaLetras.add("HELICOTEORIA - HELICOPRACTICA - CAPITULO 01");
+        listaLetras.add("HELICOTALLER - PREGUNTAS - CAPITULO 01");
+        listaLetras.add("HELICOTALLER - SOLUCIONARIO - CAPITULO 01");
+        listaLetras.add("HELICOTAREA");
+        listaLetras.add("RESOLUCION DE LA HELICOTAREA");
 
         return clases;
     }
@@ -201,9 +216,11 @@ public class Main {
         Scanner lector = new Scanner(archivo);
 
         //Course clase = ClassroomJavaAPI.obtenerClaseporId(servicioClase,"53401726393");
-        Course clase = ClassroomJavaAPI.obtenerClaseporNombre(servicioClase,nombreClase);
-        if(Objects.equals(clase,null)){
-            System.out.println(java.text.MessageFormat.format( "La clase de nombre {0} no existe " , nombreClase ));
+        //Course clase = ClassroomJavaAPI.obtenerClaseporNombre(servicioClase,nombreClase);
+        Course clase = buscarClase(servicioClase,nombreClase);
+
+        if(Objects.equals(clase.getId(),null)){
+            LOGGER.log(Level.WARNING,java.text.MessageFormat.format( "La clase de nombre {0} no existe " , nombreClase ));
             return;
         }
 
@@ -213,7 +230,7 @@ public class Main {
                 ClassroomJavaAPI.agregarAlumnoaClase(servicioClase,email,clase.getId(),clase.getEnrollmentCode());
             }
             catch (Exception e){
-                System.out.println(java.text.MessageFormat.format( "No se puede agregar al alumno con correo {0} . O el alumno ya esta en la clase o el correo no es valido" , email ));
+                LOGGER.log(Level.WARNING,java.text.MessageFormat.format( "No se puede agregar al alumno con correo {0} . O el alumno ya esta en la clase o el correo no es valido" , email ));
             }
         }
         lector.close();
@@ -227,6 +244,5 @@ public class Main {
         //cargarClases(servicioClase);
         //llenarClase(servicioClase,"Clase de Prueba 1");
 
-        
     }
 }
