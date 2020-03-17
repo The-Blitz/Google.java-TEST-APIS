@@ -213,12 +213,11 @@ public class Main {
                 ClassroomJavaAPI.agregarAlumnoaClase(servicioClase,email,clase.getId(),clase.getEnrollmentCode());
             }
             catch (Exception e){
-                System.out.println(java.text.MessageFormat.format( "No se puede agregar al alumno con correo {0}. O el alumno ya esta en la clase o el correo no es valido" , email ));
+                System.out.println(java.text.MessageFormat.format( "No se puede agregar al alumno con correo {0} . O el alumno ya esta en la clase o el correo no es valido" , email ));
             }
         }
         lector.close();
     }
-
 
     public static void main(String... args) throws IOException, GeneralSecurityException {
 
@@ -228,6 +227,6 @@ public class Main {
         //cargarClases(servicioClase);
         //llenarClase(servicioClase,"Clase de Prueba 1");
 
-        readTXT(servicioClase,"src/main/resources/4años_alumnos.txt", "4 AÑOS");
+        
     }
 }

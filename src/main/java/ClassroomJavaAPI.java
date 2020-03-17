@@ -290,6 +290,33 @@ public class ClassroomJavaAPI {
 
     }
 
+    private static List<Student> listaAlumnosClase(Classroom servicio, String idClase) throws IOException {
+        Course clase = obtenerClaseporId(servicio, idClase);
+        List<Student> estudiantes = new ArrayList<>();
+        if(Objects.equals(clase.getCourseState(),"ACTIVE")) {
+            ListStudentsResponse response = servicio.courses().students().list(clase.getId()).execute();
+            List<Student> lista = response.getStudents();
+            if(Objects.equals(lista,null)) return estudiantes;
+            while(!Objects.equals(response.getNextPageToken(),null)){
+                lista = response.getStudents();
+                estudiantes.addAll(lista);
+                response = servicio.courses().students().list(clase.getId()).setPageToken(response.getNextPageToken()).execute();
+            }
+            estudiantes.addAll(lista);
+        }
+        return estudiantes;
+    }
+
+    private static int totalAlumnosClase(Classroom servicio, String idClase) throws IOException {
+        return listaAlumnosClase(servicio,idClase).size();
+    }
+
+    public static Student buscarEstudiante(Classroom servicio , String idClase , String correoAlumno ) throws IOException {
+        Student estudiante = servicio.courses().students().get(idClase,correoAlumno).execute() ;
+        if(Objects.equals(estudiante,null)) return new Student();
+        return estudiante;
+    }
+
     public static Classroom obtenerServicio() throws IOException,GeneralSecurityException {
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         return new Classroom.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT)).setApplicationName(APPLICATION_NAME).build();
