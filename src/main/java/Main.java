@@ -258,6 +258,16 @@ public class Main {
 
     }
 
+    private static void pruebaCambioContraseña(Directory servicioUsuario, String email, String newPass ) throws IOException{
+        User usuario = GsuiteJavaAPI.obtenerUsuarioporEmail(servicioUsuario,email);
+        System.out.println(usuario.getId() + " " + usuario.getPassword()) ;
+
+        GsuiteJavaAPI.cambiarPassword(servicioUsuario,email,newPass);
+
+        usuario = GsuiteJavaAPI.obtenerUsuarioporEmail(servicioUsuario,email);
+        System.out.println(usuario.getId() + " " + usuario.getPassword()) ;
+    }
+
     private static void pruebaCambioUsuario(Directory servicioUsuario,String correo1, String correo2) throws IOException {
         User usuario = GsuiteJavaAPI.obtenerUsuarioporEmail(servicioUsuario,correo1);
         // correo original a0000@sacooliveros.edu.pe
@@ -291,5 +301,6 @@ public class Main {
 
         //readExcel("src/main/resources/correos.xlsx",servicioUsuario);
         //demoUsuario(servicioUsuario);
+
     }
 }

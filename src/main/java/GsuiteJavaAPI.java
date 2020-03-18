@@ -174,6 +174,18 @@ public class GsuiteJavaAPI {
         }
     }
 
+    public static void cambiarPassword(Directory servicio, String email , String newPass) throws IOException{
+        try {
+            User usuario = obtenerUsuarioporEmail(servicio,email);
+            usuario.setPassword(newPass);
+            servicio.users().update(email,usuario).execute();
+            LOGGER.log(Level.WARNING,"Se cambio la clave del correo " + email+ " exitosamente");
+        }
+        catch (Exception e){
+            LOGGER.log(Level.WARNING,"No se pudo cambiar la clave del correo " + email);
+        }
+    }
+
     public static User obtenerUsuarioporNombre(Directory servicio, String nombreCompleto) throws IOException{
         List<User> listaUsuarios = listarUsuarios(servicio,totalUsuarios(servicio));
         for(User usuario: listaUsuarios){
