@@ -80,7 +80,7 @@ public class GsuiteJavaAPI {
             for (Pair<Character, String> par : listaGrupos) {
                 Character tipo = par.getKey();
                 String grupo = par.getValue();
-                if (parametro == tipo) {
+                if (Objects.equals(parametro,tipo)) {
                     usuario.setOrgUnitPath(grupo);
                 }
             }
@@ -140,11 +140,41 @@ public class GsuiteJavaAPI {
     }
 
     //Obtener al Usuario de acuerdo a su correo
-    public static User obtenerUsuarioporEmail(Directory servicio, String usuarioEmail) throws IOException{
-        return servicio.users().get(usuarioEmail).execute();
+    public static User obtenerUsuarioporEmail(Directory servicio, String email) throws IOException{
+        try {
+            return servicio.users().get(email).execute();
+        }
+        catch (Exception e){
+            LOGGER.log(Level.WARNING,"El correo " + email+ " no existe");
+            return new User();
+        }
     }
 
-    private static User obtenerUsuarioporNombre(Directory servicio, String nombreCompleto) throws IOException{
+    public static void cambiarCorreo(Directory servicio, String emailActual, String nuevoEmail, List<Pair<Character,String>> listaGrupos) throws IOException{
+        try {
+            User usuario = obtenerUsuarioporEmail(servicio,emailActual);
+            usuario.setPrimaryEmail(nuevoEmail);
+
+            char parametro = nuevoEmail.charAt(0);
+
+            for (Pair<Character, String> par : listaGrupos) {
+                Character tipo = par.getKey();
+                String grupo = par.getValue();
+
+                if (Objects.equals(parametro,tipo)) {
+                    usuario.setOrgUnitPath(grupo);
+                }
+            }
+            servicio.users().update(emailActual,usuario).execute();
+            servicio.users().aliases().delete(nuevoEmail,emailActual).execute();
+            LOGGER.log(Level.INFO,"El correo " + emailActual+ " fue cambiado a " + nuevoEmail);
+        }
+        catch (Exception e){
+            LOGGER.log(Level.WARNING,"El correo " + emailActual+ " no existe");
+        }
+    }
+
+    public static User obtenerUsuarioporNombre(Directory servicio, String nombreCompleto) throws IOException{
         List<User> listaUsuarios = listarUsuarios(servicio,totalUsuarios(servicio));
         for(User usuario: listaUsuarios){
             if(Objects.equals(usuario.getName().getFullName(), nombreCompleto)) return usuario;

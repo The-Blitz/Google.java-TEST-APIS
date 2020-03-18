@@ -66,8 +66,8 @@ public class Main {
 
     private static void demoUsuario(Directory servicioUsuario) throws IOException{
         List<Pair<Character,String>> listaGrupos = new ArrayList<>();
-        Pair<Character,String> par1 = new Pair<>('a', "ALUMNOS_FRANQUICIA");
-        Pair<Character,String> par2 = new Pair<>('e', "ALUMNOS_COLEGIO");
+        Pair<Character,String> par1 = new Pair<>('a', "/ALUMNOS_FRANQUICIA");
+        Pair<Character,String> par2 = new Pair<>('e', "/ALUMNOS_COLEGIO");
         //listaGrupos.add()
         GsuiteJavaAPI.crearUsuario(servicioUsuario,"a00000007@sacooliveros.edu.pe", "Diaz","Marco",listaGrupos);
         GsuiteJavaAPI.borrarUsuario(servicioUsuario,"a00000007@sacooliveros.edu.pe" );
@@ -236,6 +236,26 @@ public class Main {
         lector.close();
     }
 
+    private static void pruebaCambioUsuario(Directory servicioUsuario,String correo1, String correo2) throws IOException {
+        User usuario = GsuiteJavaAPI.obtenerUsuarioporEmail(servicioUsuario,correo1);
+        // correo original a0000@sacooliveros.edu.pe
+        System.out.println(usuario.getId() + " " + usuario.getPrimaryEmail() + " " +
+                usuario.getName().getFullName()+ " " + usuario.getOrgUnitPath()+ " "+ usuario.getAliases());
+
+        List<Pair<Character,String>> listaGrupos = new ArrayList<>();
+        Pair<Character,String> par1 = new Pair<>('a', "/ALUMNOS_FRANQUICIA");
+        Pair<Character,String> par2 = new Pair<>('e', "/ALUMNOS_COLEGIO");
+        listaGrupos.add(par1);
+        listaGrupos.add(par2);
+        GsuiteJavaAPI.cambiarCorreo(servicioUsuario,correo1,correo2,listaGrupos);
+
+        usuario = GsuiteJavaAPI.obtenerUsuarioporEmail(servicioUsuario,correo2);
+
+        System.out.println(usuario.getId() + " " + usuario.getPrimaryEmail() + " " +
+                usuario.getName().getFullName()+ " " + usuario.getOrgUnitPath() + " "+ usuario.getAliases() );
+
+    }
+
     public static void main(String... args) throws IOException, GeneralSecurityException {
 
         Classroom servicioClase = ClassroomJavaAPI.obtenerServicio();
@@ -243,6 +263,8 @@ public class Main {
 
         //cargarClases(servicioClase);
         //llenarClase(servicioClase,"Clase de Prueba 1");
+
+
 
     }
 }
