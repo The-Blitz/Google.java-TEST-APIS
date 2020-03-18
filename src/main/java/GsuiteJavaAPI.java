@@ -62,7 +62,7 @@ public class GsuiteJavaAPI {
     }
 
     //Se crea un nuevo correo email, con los datos de la persona
-    public static User crearUsuario(Directory servicio , String email, String apellidos, String nombres, List<Pair<Character,String>> listaGrupos) throws IOException{
+    public static User crearUsuario(Directory servicio , String email, String password, String apellidos, String nombres, List<Pair<Character,String>> listaGrupos) throws IOException{
         UserName nombreUsuario = new UserName();
         nombreUsuario.setGivenName(nombres);
         nombreUsuario.setFamilyName(apellidos);
@@ -72,7 +72,7 @@ public class GsuiteJavaAPI {
 
         try {
             usuario.setName(nombreUsuario);
-            usuario.setPassword("Nueva Clave de Prueba"); // TODO: cambiar esto por un Hash o algo mas seguro
+            usuario.setPassword(password); // TODO: cambiar esto por un Hash o algo mas seguro
             usuario.setPrimaryEmail(email);
 
             char parametro = email.charAt(0);
