@@ -320,19 +320,50 @@ public class Main {
     }
 
     private static void obtenerTareas(Classroom servicioClase) throws IOException{
+
+        Workbook workbook = new HSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Hoja 1");
+        Row row = sheet.createRow(0);
+        Cell cell = row.createCell(0); cell.setCellValue("Clase");
+        cell = row.createCell(1); cell.setCellValue("Topico");
+        cell = row.createCell(2); cell.setCellValue("Tarea");
+        cell = row.createCell(3); cell.setCellValue("Cantidad Entregas");
+        int contador = 1;
+
         List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase,ClassroomJavaAPI.totaldeClases(servicioClase));
+
         for (Course clase : listaClases) {
             if (clase.getName().length() < 3 || clase.getName().charAt(0) < '1' || clase.getName().charAt(0) > '6' || clase.getName().charAt(2) != 'o') continue;
 
-            List<Topic> listaTopicos = ClassroomJavaAPI.obtenerTopicosdeClase(servicioClase, clase.getId() , ClassroomJavaAPI.totaldeTopicosdeClase(servicioClase, clase.getId()));
             List<CourseWork> listaTareas = ClassroomJavaAPI.obtenerTareasdeClase(servicioClase,clase.getId(),ClassroomJavaAPI.totaldeTareasdeClase(servicioClase,clase.getId()));
 
             for(CourseWork tarea : listaTareas){
-                System.out.println(clase.getName()+" "+tarea.getTitle()+" "+
-                        ClassroomJavaAPI.totaldeEntregasdeTarea(servicioClase,clase.getId(),tarea.getId()));
+                Topic topico = ClassroomJavaAPI.obtenerTopicoconIds(servicioClase,clase.getId(),tarea.getTopicId());
+                int total = ClassroomJavaAPI.totaldeEntregasdeTarea(servicioClase,clase.getId(),tarea.getId());
+                row = sheet.createRow(contador);
+                cell = row.createCell(0); cell.setCellValue(clase.getName());
+                cell = row.createCell(1); cell.setCellValue(topico.getName());
+                cell = row.createCell(2); cell.setCellValue(tarea.getTitle());
+                cell = row.createCell(3); cell.setCellValue(total);
+                contador+=1;
+
+                LOGGER.log(Level.INFO,clase.getName()+" "+topico.getName()+" "+tarea.getTitle()+" "+ total);
             }
 
         }
+
+        try {
+            FileOutputStream out = new FileOutputStream(new File("src/main/resources/entregas.xls"));
+            workbook.write(out);
+            out.close();
+            System.out.println("Se creo el archivo de excel");
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static void main(String... args) throws IOException, GeneralSecurityException {
