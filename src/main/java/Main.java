@@ -319,6 +319,22 @@ public class Main {
 
     }
 
+    private static void obtenerTareas(Classroom servicioClase) throws IOException{
+        List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase,ClassroomJavaAPI.totaldeClases(servicioClase));
+        for (Course clase : listaClases) {
+            if (clase.getName().length() < 3 || clase.getName().charAt(0) < '1' || clase.getName().charAt(0) > '6' || clase.getName().charAt(2) != 'o') continue;
+
+            List<Topic> listaTopicos = ClassroomJavaAPI.obtenerTopicosdeClase(servicioClase, clase.getId() , ClassroomJavaAPI.totaldeTopicosdeClase(servicioClase, clase.getId()));
+            List<CourseWork> listaTareas = ClassroomJavaAPI.obtenerTareasdeClase(servicioClase,clase.getId(),ClassroomJavaAPI.totaldeTareasdeClase(servicioClase,clase.getId()));
+
+            for(CourseWork tarea : listaTareas){
+                System.out.println(clase.getName()+" "+tarea.getTitle()+" "+
+                        ClassroomJavaAPI.totaldeEntregasdeTarea(servicioClase,clase.getId(),tarea.getId()));
+            }
+
+        }
+    }
+
     public static void main(String... args) throws IOException, GeneralSecurityException {
 
         Classroom servicioClase = ClassroomJavaAPI.obtenerServicio();

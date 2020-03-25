@@ -293,6 +293,38 @@ public class ClassroomJavaAPI {
         return new CourseWork();
     }
 
+    public static List<StudentSubmission> obtenerEntregasdeTarea(Classroom servicio, String idClase , String idTarea ) throws IOException {
+        try {
+            ListStudentSubmissionsResponse response = servicio.courses().courseWork().studentSubmissions().list(idClase,idTarea).execute();
+            List<StudentSubmission> entregas = new ArrayList<>();
+
+            if(response.isEmpty()) {
+                LOGGER.log(Level.WARNING, "No hay tareas en la clase de id " + idClase);
+                return new ArrayList<>();
+            }
+
+            List<StudentSubmission> lista = response.getStudentSubmissions();
+            if(Objects.equals(lista,null)) return entregas;
+            while(!Objects.equals(response.getNextPageToken(),null)){
+                lista = response.getStudentSubmissions();
+                entregas.addAll(lista);
+                response = servicio.courses().courseWork().studentSubmissions().list(idClase,idTarea).setPageToken(response.getNextPageToken()).execute();
+            }
+            entregas.addAll(lista);
+
+            return entregas;
+        }
+        catch (Exception e){
+            LOGGER.log(Level.WARNING, "Hubo un error con el servicio");
+            return new ArrayList<>();
+        }
+
+    }
+
+    public static int totaldeEntregasdeTarea(Classroom servicio, String idClase, String idTarea ) throws IOException {
+        return obtenerEntregasdeTarea(servicio,idClase,idTarea).size();
+    }
+
     //Se agregar un profesor, solo con su correo a la clase indicada, mediante su ID
     public static Teacher agregarProfesoraClase(Classroom servicio, String emailProfesor, String idClase) throws IOException{
         Teacher profesor = new Teacher();
