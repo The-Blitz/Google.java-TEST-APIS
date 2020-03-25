@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 
 
@@ -101,26 +102,30 @@ public class Main {
     private static void cargarClases(Classroom servicioClase) throws IOException{
         List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase,ClassroomJavaAPI.totaldeClases(servicioClase) );
         for (Course clase : listaClases) {
-            if( ! Objects.equals(clase.getName(),"Clase de Prueba 1")) continue;
+            if( clase.getName().length() < 3 || clase.getName().charAt(0) < '1' || clase.getName().charAt(0) > '6' || clase.getName().charAt(2) != 'o') continue;
 
             List<Topic> listaTopicos = ClassroomJavaAPI.obtenerTopicosdeClase(servicioClase, clase.getId() , ClassroomJavaAPI.totaldeTopicosdeClase(servicioClase, clase.getId()));
             List<CourseWork> listaTareas = ClassroomJavaAPI.obtenerTareasdeClase(servicioClase, clase.getId() , ClassroomJavaAPI.totaldeTareasdeClase(servicioClase, clase.getId()));
 
             if(!estructuraClases.containsKey(clase.getName())) estructuraClases.put(clase.getName()  , new HashMap<>() ) ;
-            if(clasesPorNombre.isEmpty()) clasesPorNombre.put(clase.getName(),  new HashSet<>() );
+            if(!clasesPorNombre.containsKey(clase.getName())) clasesPorNombre.put(clase.getName(),  new HashSet<>() );
             clasesPorNombre.get(clase.getName()).add(clase.getId());
+
+            if(listaTopicos.isEmpty()) continue; // Si no hay topicos
 
             for(Topic topico: listaTopicos){
                 if(!estructuraClases.get(clase.getName()).containsKey(topico.getName()))
                     estructuraClases.get(clase.getName()).put(topico.getName(), new HashSet<>());
-                if(topicosPorNombre.isEmpty()) topicosPorNombre.put(topico.getName(),  new HashMap<>() );
+                if(!topicosPorNombre.containsKey(topico.getName())) topicosPorNombre.put(topico.getName(),  new HashMap<>() );
                 topicosPorNombre.get(topico.getName()).put(clase.getId(),topico.getTopicId());
+
+                if(listaTareas.isEmpty()) continue; // Si no hay tareas
 
                 for(CourseWork tarea: listaTareas){
                     if(Objects.equals(tarea.getState(),"DRAFT")) continue;
                     if(!estructuraClases.get(clase.getName()).get(topico.getName()).contains(tarea.getTitle()) )
                         estructuraClases.get(clase.getName()).get(topico.getName()).add(tarea.getTitle());
-                    if(tareasPorNombre.isEmpty()) tareasPorNombre.put(tarea.getTitle(),  new HashMap<>() );
+                    if(!tareasPorNombre.containsKey(tarea.getTitle())) tareasPorNombre.put(tarea.getTitle(),  new HashMap<>() );
                     tareasPorNombre.get(tarea.getTitle()).put(topico.getTopicId(),tarea.getId());
                 }
             }
@@ -253,8 +258,39 @@ public class Main {
             String nivel_grado = dataFormatter.formatCellValue(row.getCell(6));
             GsuiteJavaAPI.crearUsuario(servicioUsuario,correo,pass,apellidos,nombres,listaGrupos);
 
-            break;
         }
+
+    }
+
+    private static void writeExcel(Classroom servicioClase) throws IOException {
+        Workbook workbook = new HSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Hoja 1");
+        Row row = sheet.createRow(0);
+        Cell cell = row.createCell(0); cell.setCellValue("Clase");
+        cell = row.createCell(1); cell.setCellValue("Alumnos");
+
+        int contador = 1;
+
+        for (String nombreClase : clasesPorNombre.keySet()){
+            Course clase = buscarClase(servicioClase,nombreClase);
+            row = sheet.createRow(contador);
+            cell = row.createCell(0); cell.setCellValue(nombreClase);
+            cell = row.createCell(1); cell.setCellValue(ClassroomJavaAPI.totalAlumnosClase(servicioClase,clase.getId()));
+            contador+=1;
+            LOGGER.log(Level.INFO,"Se agrego al excel la clase " + nombreClase);
+        }
+        try {
+            FileOutputStream out = new FileOutputStream(new File("src/main/resources/alumnos.xls"));
+            workbook.write(out);
+            out.close();
+            System.out.println("Se creo el archivo de excel");
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
     }
 

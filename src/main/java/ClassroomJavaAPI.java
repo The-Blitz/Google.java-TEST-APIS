@@ -80,7 +80,9 @@ public class ClassroomJavaAPI {
                 LOGGER.log(Level.WARNING, "No hay clases registradas");
                 return new ArrayList<>();
             }
-            return response.getCourses();
+            List<Course> cursosActivos = response.getCourses();
+            cursosActivos.removeIf(clase -> Objects.equals(clase.getCourseState() , "ARCHIVED"));
+            return cursosActivos;
         }
         catch (Exception e){
             LOGGER.log(Level.WARNING, "Hubo un error con el servicio");
@@ -394,7 +396,7 @@ public class ClassroomJavaAPI {
 
     }
 
-    private static List<Student> listaAlumnosClase(Classroom servicio, String idClase) throws IOException {
+    public static List<Student> listaAlumnosClase(Classroom servicio, String idClase) throws IOException {
         Course clase = obtenerClaseporId(servicio, idClase);
         List<Student> estudiantes = new ArrayList<>();
         if(Objects.equals(clase.getCourseState(),"ACTIVE")) {
@@ -411,7 +413,7 @@ public class ClassroomJavaAPI {
         return estudiantes;
     }
 
-    private static int totalAlumnosClase(Classroom servicio, String idClase) throws IOException {
+    public static int totalAlumnosClase(Classroom servicio, String idClase) throws IOException {
         return listaAlumnosClase(servicio,idClase).size();
     }
 
