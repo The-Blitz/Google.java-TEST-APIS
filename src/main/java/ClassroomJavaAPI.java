@@ -263,9 +263,9 @@ public class ClassroomJavaAPI {
 
     }
 
-    public static List<CourseWork> obtenerTareasdeClase(Classroom servicio, String idClase , Integer cantidadTareas ) throws IOException {
+    public static List<CourseWork> obtenerTareasdeClase(Classroom servicio, String idClase ) throws IOException {
         try {
-            ListCourseWorkResponse response = servicio.courses().courseWork().list(idClase).setPageSize(cantidadTareas).execute();
+            ListCourseWorkResponse response = servicio.courses().courseWork().list(idClase).execute();
 
             if(response.isEmpty()) {
                 LOGGER.log(Level.WARNING, "No hay tareas en la clase de id " + idClase);
@@ -281,12 +281,12 @@ public class ClassroomJavaAPI {
     }
 
     public static int totaldeTareasdeClase(Classroom servicio, String idClase ) throws IOException {
-        return servicio.courses().courseWork().list(idClase).size();
+        return obtenerTareasdeClase(servicio,idClase).size();
     }
 
     //Dar el nombre exacto de la tarea el id de la clase y el id del topico
     private static CourseWork obtenerTareasporNombre(Classroom servicio, String idClase, String idTopico, String nombre) throws IOException {
-        List<CourseWork> tareas = obtenerTareasdeClase(servicio,idClase, totaldeTareasdeClase(servicio,idClase));
+        List<CourseWork> tareas = obtenerTareasdeClase(servicio,idClase);
         for (CourseWork tarea : tareas) {
             if( (Objects.equals(tarea.getTopicId(), idTopico)) && Objects.equals(nombre ,tarea.getTitle() )  ) return tarea;
         }
@@ -412,7 +412,7 @@ public class ClassroomJavaAPI {
         for (String idClase : listaClases) {
 
             List<Topic> listaTopicos = obtenerTopicosdeClase(servicio, idClase );
-            List<CourseWork> listaTareas = obtenerTareasdeClase(servicio, idClase , totaldeTareasdeClase(servicio , idClase));
+            List<CourseWork> listaTareas = obtenerTareasdeClase(servicio, idClase);
 
             for(CourseWork tarea : listaTareas){
                 eliminarTareadeClase(servicio,idClase,tarea.getId());
