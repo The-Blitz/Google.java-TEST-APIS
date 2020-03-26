@@ -100,12 +100,12 @@ public class Main {
     }
 
     private static void cargarClases(Classroom servicioClase) throws IOException{
-        List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase,ClassroomJavaAPI.totaldeClases(servicioClase) );
+        List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase );
         for (Course clase : listaClases) {
             if( clase.getName().length() < 3 || clase.getName().charAt(0) < '1' || clase.getName().charAt(0) > '6' || clase.getName().charAt(2) != 'o') continue;
 
-            List<Topic> listaTopicos = ClassroomJavaAPI.obtenerTopicosdeClase(servicioClase, clase.getId() , ClassroomJavaAPI.totaldeTopicosdeClase(servicioClase, clase.getId()));
-            List<CourseWork> listaTareas = ClassroomJavaAPI.obtenerTareasdeClase(servicioClase, clase.getId() , ClassroomJavaAPI.totaldeTareasdeClase(servicioClase, clase.getId()));
+            List<Topic> listaTopicos = ClassroomJavaAPI.obtenerTopicosdeClase(servicioClase, clase.getId() );
+            List<CourseWork> listaTareas = ClassroomJavaAPI.obtenerTareasdeClase(servicioClase, clase.getId() );
 
             if(!estructuraClases.containsKey(clase.getName())) estructuraClases.put(clase.getName()  , new HashMap<>() ) ;
             if(!clasesPorNombre.containsKey(clase.getName())) clasesPorNombre.put(clase.getName(),  new HashSet<>() );
@@ -270,7 +270,7 @@ public class Main {
 
     private static void reportarAlumnos(Classroom servicioClase) throws IOException {
         Workbook workbook = new HSSFWorkbook();
-        List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase,ClassroomJavaAPI.totaldeClases(servicioClase));
+        List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase);
 
         for ( Course clase : listaClases){
             if (clase.getName().length() < 3 || clase.getName().charAt(0) < '1' || clase.getName().charAt(0) > '6' || clase.getName().charAt(2) != 'o') continue;
@@ -332,34 +332,53 @@ public class Main {
     private static void obtenerTareas(Classroom servicioClase) throws IOException{
 
         Workbook workbook = new HSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Hoja 1");
-        Row row = sheet.createRow(0);
-        Cell cell = row.createCell(0); cell.setCellValue("Clase");
-        cell = row.createCell(1); cell.setCellValue("Topico");
-        cell = row.createCell(2); cell.setCellValue("Tarea");
-        cell = row.createCell(3); cell.setCellValue("Cantidad Entregas");
-        int contador = 1;
 
-        List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase,ClassroomJavaAPI.totaldeClases(servicioClase));
+
+        List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase);
 
         for (Course clase : listaClases) {
             if (clase.getName().length() < 3 || clase.getName().charAt(0) < '1' || clase.getName().charAt(0) > '6' || clase.getName().charAt(2) != 'o') continue;
 
-            List<CourseWork> listaTareas = ClassroomJavaAPI.obtenerTareasdeClase(servicioClase,clase.getId(),ClassroomJavaAPI.totaldeTareasdeClase(servicioClase,clase.getId()));
+            List<CourseWork> listaTareas = ClassroomJavaAPI.obtenerTareasdeClase(servicioClase,clase.getId());
+
+            Sheet sheet = workbook.createSheet(clase.getName());
+            int contador = 0;
 
             for(CourseWork tarea : listaTareas){
                 Topic topico = ClassroomJavaAPI.obtenerTopicoconIds(servicioClase,clase.getId(),tarea.getTopicId());
-                int total = ClassroomJavaAPI.totaldeEntregasdeTarea(servicioClase,clase.getId(),tarea.getId());
-                row = sheet.createRow(contador);
-                cell = row.createCell(0); cell.setCellValue(clase.getName());
+                List<StudentSubmission> entregas = ClassroomJavaAPI.obtenerEntregasdeTarea(servicioClase,clase.getId(),tarea.getId());
+
+                Row row = sheet.createRow(contador);
+                Cell cell = row.createCell(0); cell.setCellValue(clase.getName());
                 cell = row.createCell(1); cell.setCellValue(topico.getName());
                 cell = row.createCell(2); cell.setCellValue(tarea.getTitle());
-                cell = row.createCell(3); cell.setCellValue(total);
+
                 contador+=1;
+                row = sheet.createRow(contador);
+                cell = row.createCell(0); cell.setCellValue("Correo");
+                cell = row.createCell(1); cell.setCellValue("Alumno");
+                cell = row.createCell(2); cell.setCellValue("Fecha Creación");
+                cell = row.createCell(3); cell.setCellValue("Fecha Actualización");
+                cell = row.createCell(4); cell.setCellValue("Nota");
+                for(StudentSubmission entrega : entregas){
+                    contador+=1;
+                    row = sheet.createRow(contador);
+                    String idAlumno = entrega.getUserId();
+                    Student alumno = ClassroomJavaAPI.buscarEstudiante(servicioClase,clase.getId(),idAlumno);
+                    cell = row.createCell(0); cell.setCellValue(alumno.getProfile().getEmailAddress());
+                    cell = row.createCell(1); cell.setCellValue(alumno.getProfile().getName().getFullName());
+                    cell = row.createCell(2); cell.setCellValue(entrega.getCreationTime());
+                    cell = row.createCell(3); cell.setCellValue(entrega.getUpdateTime());
+                    cell = row.createCell(4);
+                    if(!Objects.equals(entrega.getAssignedGrade() , null))
+                        { cell.setCellValue(entrega.getAssignedGrade());}
+                }
 
-                LOGGER.log(Level.INFO,clase.getName()+" "+topico.getName()+" "+tarea.getTitle()+" "+ total);
+                contador+=1;
+                row = sheet.createRow(contador);
+                LOGGER.log(Level.INFO,"Agregada tarea "+clase.getName()+" "+topico.getName()+" "+tarea.getTitle());
             }
-
+            break;
         }
 
         try {
@@ -382,5 +401,6 @@ public class Main {
         Directory servicioUsuario = GsuiteJavaAPI.obtenerServicio();
 
         
+
     }
 }
