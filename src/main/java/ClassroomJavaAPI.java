@@ -172,13 +172,13 @@ public class ClassroomJavaAPI {
     }
 
     public static int totaldeTopicosdeClase(Classroom servicio, String idClase) throws IOException{
-        return servicio.courses().topics().list(idClase).size();
+        return obtenerTopicosdeClase(servicio,idClase).size();
     }
 
-    public static List<Topic> obtenerTopicosdeClase(Classroom servicio, String idClase , Integer cantidadTopicos ) throws IOException {
+    public static List<Topic> obtenerTopicosdeClase(Classroom servicio, String idClase) throws IOException {
 
         try {
-            ListTopicResponse response = servicio.courses().topics().list(idClase).setPageSize(cantidadTopicos).execute();
+            ListTopicResponse response = servicio.courses().topics().list(idClase).execute();
 
             if(response.isEmpty()) {
                 LOGGER.log(Level.WARNING, "No hay topicos en la clase de id " + idClase);
@@ -200,7 +200,7 @@ public class ClassroomJavaAPI {
 
     //Dar el nombre exacto del topico y el id de la clase
     private static Topic obtenerTopicoporNombre(Classroom servicio, String idClase, String nombre) throws IOException {
-        List<Topic> topicos = obtenerTopicosdeClase(servicio,idClase, totaldeTopicosdeClase(servicio,idClase));
+        List<Topic> topicos = obtenerTopicosdeClase(servicio,idClase);
         for (Topic topico : topicos) {
             if(Objects.equals(nombre ,topico.getName() ) ) return topico;
         }
@@ -411,7 +411,7 @@ public class ClassroomJavaAPI {
     public static void borradoMasivo(Classroom servicio, List<String> listaClases) throws IOException {
         for (String idClase : listaClases) {
 
-            List<Topic> listaTopicos = obtenerTopicosdeClase(servicio, idClase , totaldeTopicosdeClase(servicio , idClase));
+            List<Topic> listaTopicos = obtenerTopicosdeClase(servicio, idClase );
             List<CourseWork> listaTareas = obtenerTareasdeClase(servicio, idClase , totaldeTareasdeClase(servicio , idClase));
 
             for(CourseWork tarea : listaTareas){
