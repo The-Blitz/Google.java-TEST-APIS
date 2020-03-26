@@ -132,6 +132,12 @@ public class Main {
 
         }
 
+        listaGrupos = new ArrayList<>();
+        Pair<Character,String> par1 = new Pair<>('a', "/ALUMNOS_FRANQUICIA");
+        Pair<Character,String> par2 = new Pair<>('e', "/ALUMNOS_COLEGIO");
+        listaGrupos.add(par1);
+        listaGrupos.add(par2);
+
     }
 
     private static List<String> listaCiencias = new ArrayList<>();
@@ -262,22 +268,26 @@ public class Main {
 
     }
 
-    private static void writeExcel(Classroom servicioClase) throws IOException {
+    private static void reportarAlumnos(Classroom servicioClase) throws IOException {
         Workbook workbook = new HSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Hoja 1");
-        Row row = sheet.createRow(0);
-        Cell cell = row.createCell(0); cell.setCellValue("Clase");
-        cell = row.createCell(1); cell.setCellValue("Alumnos");
+        List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase,ClassroomJavaAPI.totaldeClases(servicioClase));
 
-        int contador = 1;
+        for ( Course clase : listaClases){
+            if (clase.getName().length() < 3 || clase.getName().charAt(0) < '1' || clase.getName().charAt(0) > '6' || clase.getName().charAt(2) != 'o') continue;
+            Sheet sheet = workbook.createSheet(clase.getName());
+            Row row = sheet.createRow(0);
+            Cell cell = row.createCell(0); cell.setCellValue("Correo");
+            cell = row.createCell(1); cell.setCellValue("Nombre");
+            int contador = 1;
+            List<Student> alumnos = ClassroomJavaAPI.listaAlumnosClase(servicioClase,clase.getId());
 
-        for (String nombreClase : clasesPorNombre.keySet()){
-            Course clase = buscarClase(servicioClase,nombreClase);
-            row = sheet.createRow(contador);
-            cell = row.createCell(0); cell.setCellValue(nombreClase);
-            cell = row.createCell(1); cell.setCellValue(ClassroomJavaAPI.totalAlumnosClase(servicioClase,clase.getId()));
-            contador+=1;
-            LOGGER.log(Level.INFO,"Se agrego al excel la clase " + nombreClase);
+            for(Student alumno : alumnos){
+                row = sheet.createRow(contador);
+                cell = row.createCell(0); cell.setCellValue(alumno.getProfile().getEmailAddress());
+                cell = row.createCell(1); cell.setCellValue(alumno.getProfile().getName().getFullName());
+                contador+=1;
+            }
+            LOGGER.log(Level.INFO,"Se agrego al excel la clase " + clase.getName());
         }
         try {
             FileOutputStream out = new FileOutputStream(new File("src/main/resources/alumnos.xls"));
@@ -371,19 +381,6 @@ public class Main {
         Classroom servicioClase = ClassroomJavaAPI.obtenerServicio();
         Directory servicioUsuario = GsuiteJavaAPI.obtenerServicio();
 
-        //cargarClases(servicioClase);
-        //llenarClase(servicioClase,"Clase de Prueba 1");
-
-        //pruebaCambioUsuario(servicioUsuario,"a0000@sacooliveros.edu.pe","e2222@sacooliveros.edu.pe");
-
-        listaGrupos = new ArrayList<>();
-        Pair<Character,String> par1 = new Pair<>('a', "/ALUMNOS_FRANQUICIA");
-        Pair<Character,String> par2 = new Pair<>('e', "/ALUMNOS_COLEGIO");
-        listaGrupos.add(par1);
-        listaGrupos.add(par2);
-
-        //readExcel("src/main/resources/correos.xlsx",servicioUsuario);
-        //demoUsuario(servicioUsuario);
-
+        
     }
 }
