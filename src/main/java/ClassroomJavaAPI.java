@@ -64,18 +64,12 @@ public class ClassroomJavaAPI {
     }
 
     public static int totaldeClases(Classroom servicio) throws IOException{
-        try {
-            return servicio.courses().list().size();
-        }
-        catch (Exception e){
-            LOGGER.log(Level.WARNING, "No hay clases registradas");
-            return 0;
-        }
+        return listarClases(servicio).size();
     }
 
-    public static List<Course> listarClases(Classroom servicio , Integer cantidadClases) throws IOException{
+    public static List<Course> listarClases(Classroom servicio) throws IOException{
         try {
-            ListCoursesResponse response = servicio.courses().list().setPageSize(cantidadClases).execute();
+            ListCoursesResponse response = servicio.courses().list().execute();
             if(response.isEmpty()) {
                 LOGGER.log(Level.WARNING, "No hay clases registradas");
                 return new ArrayList<>();
@@ -121,7 +115,7 @@ public class ClassroomJavaAPI {
 
     //Dar el nombre exacto de la clase
     public static Course obtenerClaseporNombre(Classroom servicio , String nombre) throws IOException {
-        List<Course> clases = listarClases(servicio, totaldeClases(servicio));
+        List<Course> clases = listarClases(servicio);
         for (Course clase : clases) {
             if(Objects.equals(nombre ,clase.getName() ) ) return clase;
         }
