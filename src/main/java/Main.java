@@ -329,60 +329,69 @@ public class Main {
 
     }
 
-    private static void obtenerTareas(Classroom servicioClase) throws IOException{
+    private static void obtenerTareasporClase(Classroom servicioClase, String idClase) throws IOException{
 
         Workbook workbook = new HSSFWorkbook();
+        Course clase = ClassroomJavaAPI.obtenerClaseporId(servicioClase,idClase);
+
+        List<CourseWork> listaTareas = ClassroomJavaAPI.obtenerTareasdeClase(servicioClase,clase.getId());
+        HashMap<String,Sheet> sheets = new HashMap<>();
+        HashMap<String,Integer> contadores = new HashMap<>();
 
 
-        List<Course> listaClases = ClassroomJavaAPI.listarClases(servicioClase);
-
-        for (Course clase : listaClases) {
-            if (clase.getName().length() < 3 || clase.getName().charAt(0) < '1' || clase.getName().charAt(0) > '6' || clase.getName().charAt(2) != 'o') continue;
-
-            List<CourseWork> listaTareas = ClassroomJavaAPI.obtenerTareasdeClase(servicioClase,clase.getId());
-
-            Sheet sheet = workbook.createSheet(clase.getName());
-            int contador = 0;
-
-            for(CourseWork tarea : listaTareas){
-                Topic topico = ClassroomJavaAPI.obtenerTopicoconIds(servicioClase,clase.getId(),tarea.getTopicId());
-                List<StudentSubmission> entregas = ClassroomJavaAPI.obtenerEntregasdeTarea(servicioClase,clase.getId(),tarea.getId());
-
-                Row row = sheet.createRow(contador);
-                Cell cell = row.createCell(0); cell.setCellValue(clase.getName());
-                cell = row.createCell(1); cell.setCellValue(topico.getName());
-                cell = row.createCell(2); cell.setCellValue(tarea.getTitle());
-
-                contador+=1;
-                row = sheet.createRow(contador);
-                cell = row.createCell(0); cell.setCellValue("Correo");
-                cell = row.createCell(1); cell.setCellValue("Alumno");
-                cell = row.createCell(2); cell.setCellValue("Fecha Creación");
-                cell = row.createCell(3); cell.setCellValue("Fecha Actualización");
-                cell = row.createCell(4); cell.setCellValue("Nota");
-                for(StudentSubmission entrega : entregas){
-                    contador+=1;
-                    row = sheet.createRow(contador);
-                    String idAlumno = entrega.getUserId();
-                    Student alumno = ClassroomJavaAPI.buscarEstudiante(servicioClase,clase.getId(),idAlumno);
-                    cell = row.createCell(0); cell.setCellValue(alumno.getProfile().getEmailAddress());
-                    cell = row.createCell(1); cell.setCellValue(alumno.getProfile().getName().getFullName());
-                    cell = row.createCell(2); cell.setCellValue(entrega.getCreationTime());
-                    cell = row.createCell(3); cell.setCellValue(entrega.getUpdateTime());
-                    cell = row.createCell(4);
-                    if(!Objects.equals(entrega.getAssignedGrade() , null))
-                        { cell.setCellValue(entrega.getAssignedGrade());}
-                }
-
-                contador+=1;
-                row = sheet.createRow(contador);
-                LOGGER.log(Level.INFO,"Agregada tarea "+clase.getName()+" "+topico.getName()+" "+tarea.getTitle());
+        for(CourseWork tarea : listaTareas){
+            Topic topico = ClassroomJavaAPI.obtenerTopicoconIds(servicioClase,clase.getId(),tarea.getTopicId());
+            if(!sheets.containsKey(topico.getTopicId())){
+                sheets.put(topico.getTopicId() , workbook.createSheet(topico.getName()));
+                contadores.put(topico.getTopicId() , 0);
             }
-            break;
+        }
+
+
+        for(CourseWork tarea : listaTareas){
+            Topic topico = ClassroomJavaAPI.obtenerTopicoconIds(servicioClase,clase.getId(),tarea.getTopicId());
+            List<StudentSubmission> entregas = ClassroomJavaAPI.obtenerEntregasdeTarea(servicioClase,clase.getId(),tarea.getId());
+            Sheet sheet = sheets.get(topico.getTopicId());
+            int contador = contadores.get(topico.getTopicId());
+            Row row = sheet.createRow(contador);
+            Cell cell = row.createCell(0); cell.setCellValue(clase.getName());
+            cell = row.createCell(1); cell.setCellValue(topico.getName());
+            cell = row.createCell(2); cell.setCellValue(tarea.getTitle());
+
+            contador+=1;
+            row = sheet.createRow(contador);
+            cell = row.createCell(0); cell.setCellValue("Correo");
+            cell = row.createCell(1); cell.setCellValue("Alumno");
+            cell = row.createCell(2); cell.setCellValue("Fecha Creación");
+            cell = row.createCell(3); cell.setCellValue("Fecha Actualización");
+            cell = row.createCell(4); cell.setCellValue("Nota");
+
+            HashSet<String> estudiantes = new HashSet<>();
+
+            for(StudentSubmission entrega : entregas){
+                String idAlumno = entrega.getUserId();
+                if(estudiantes.contains(idAlumno)) continue;
+                estudiantes.add(idAlumno);
+                contador+=1;
+                row = sheet.createRow(contador);
+                Student alumno = ClassroomJavaAPI.buscarEstudiante(servicioClase,clase.getId(),idAlumno);
+                cell = row.createCell(0); cell.setCellValue(alumno.getProfile().getEmailAddress());
+                cell = row.createCell(1); cell.setCellValue(alumno.getProfile().getName().getFullName());
+                cell = row.createCell(2); cell.setCellValue(entrega.getCreationTime());
+                cell = row.createCell(3); cell.setCellValue(entrega.getUpdateTime());
+                cell = row.createCell(4);
+                if(!Objects.equals(entrega.getAssignedGrade() , null))
+                    { cell.setCellValue(entrega.getAssignedGrade());}
+            }
+
+            contador+=1;row = sheet.createRow(contador);
+            contador+=1;row = sheet.createRow(contador);
+            contadores.put(topico.getTopicId(),contador);
+            LOGGER.log(Level.INFO,"Agregada tarea "+clase.getName()+" "+topico.getName()+" "+tarea.getTitle());
         }
 
         try {
-            FileOutputStream out = new FileOutputStream(new File("src/main/resources/entregas.xls"));
+            FileOutputStream out = new FileOutputStream(new File("src/main/resources/"+clase.getName()+".xls"));
             workbook.write(out);
             out.close();
             System.out.println("Se creo el archivo de excel");
@@ -400,7 +409,7 @@ public class Main {
         Classroom servicioClase = ClassroomJavaAPI.obtenerServicio();
         Directory servicioUsuario = GsuiteJavaAPI.obtenerServicio();
 
-        
+
 
     }
 }

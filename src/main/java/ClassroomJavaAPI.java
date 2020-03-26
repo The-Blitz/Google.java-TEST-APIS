@@ -108,7 +108,7 @@ public class ClassroomJavaAPI {
             return servicio.courses().get(id).execute();
         }
         catch (Exception e){
-            LOGGER.log(Level.WARNING, "La clase de ID" + id + "no pudo ser encontrada");
+            LOGGER.log(Level.WARNING, "La clase de ID " + id + " no pudo ser encontrada");
             return new Course();
         }
     }
